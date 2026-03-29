@@ -1177,12 +1177,15 @@
             const messagesContainer = document.getElementById('chatMessages');
             const messageEl = document.createElement('div');
             messageEl.className = 'message own';
+            
+            const avatarChar = currentUser.id === 'self' ? '尧' : '涵';
+            
             messageEl.innerHTML = `
                 <div class="message-content">
                     <div class="message-bubble">${text}</div>
                     <div class="message-time">${timeStr}</div>
                 </div>
-                <div class="message-avatar" onclick="editAvatar('self')" title="点击编辑头像">${currentUser.name.charAt(0)}</div>
+                <div class="message-avatar" onclick="editAvatar('${currentUser.id}')" title="点击编辑头像">${avatarChar}</div>
             `;
             messagesContainer.appendChild(messageEl);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
@@ -1390,8 +1393,56 @@
             document.getElementById('messageCount').textContent = appData.messages.length;
         }
 
+        // ===== 渲染聊天消息 =====
+        function renderChatMessages() {
+            const container = document.getElementById('chatMessages');
+            container.innerHTML = '';
+
+            appData.messages.forEach(msg => {
+                const messageEl = document.createElement('div');
+                const isOwn = msg.senderType === currentUser.id;
+                messageEl.className = isOwn ? 'message own' : 'message';
+                
+                const avatarChar = msg.senderType === 'self' ? '尧' : '涵';
+                
+                if (isOwn) {
+                    messageEl.innerHTML = `
+                        <div class="message-content">
+                            <div class="message-bubble">${msg.text}</div>
+                            <div class="message-time">${msg.time}</div>
+                        </div>
+                        <div class="message-avatar" onclick="editAvatar('${msg.senderType}')" title="点击编辑头像">${avatarChar}</div>
+                    `;
+                } else {
+                    messageEl.innerHTML = `
+                        <div class="message-avatar" onclick="editAvatar('${msg.senderType}')" title="点击编辑头像">${avatarChar}</div>
+                        <div class="message-content">
+                            <div class="message-bubble">${msg.text}</div>
+                            <div class="message-time">${msg.time}</div>
+                        </div>
+                    `;
+                }
+                
+                container.appendChild(messageEl);
+            });
+
+            container.scrollTop = container.scrollHeight;
+        }
+
         // ===== 初始化 =====
         window.addEventListener('load', () => {
+            // 重新加载最新的 appData
+            appData = JSON.parse(localStorage.getItem('appData')) || {
+                startDate: '2024-11-28',
+                photos: [],
+                messages: [
+                    { sender: '郑思涵', text: '嗨，亲爱的 💕', time: '2024-11-28 10:00:00', senderType: 'other' },
+                    { sender: '范忠尧', text: '你好呀！想你了 ❤️', time: '2024-11-28 10:05:30', senderType: 'self' }
+                ],
+                avatars: {},
+                customAnniversaries: []
+            };
+
             const saved = localStorage.getItem('currentUser');
             if (saved) {
                 currentUser = JSON.parse(saved);
@@ -1399,6 +1450,7 @@
                     document.body.classList.add('theme-blue');
                 }
                 showApp();
+                renderChatMessages();
             }
 
             if (appData.customMusic) {
